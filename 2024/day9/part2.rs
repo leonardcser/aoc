@@ -24,6 +24,7 @@ fn process_file(file_path: &str) -> io::Result<()> {
         .map(|c| c.to_digit(10).expect("Not a digit") as usize)
         .collect();
 
+    nums.push(0);
     let size: usize = nums.clone().into_iter().sum();
     let mut ids: Vec<i16> = (0..nums.len() / 2 + 1)
         .flat_map(|id| vec![id as i16, -1])
@@ -52,12 +53,10 @@ fn process_file(file_path: &str) -> io::Result<()> {
             if nums[tmp_l] == nums[r] {
                 println!("PERFECT");
                 // Fits perfectly
-
-                nums[tmp_l] = nums[r];
+                nums[tmp_l] = 0;
+                nums.insert(tmp_l, nums[r]);
                 nums.insert(tmp_l, 0);
-                nums.remove(r + 1);
-                nums.remove(tmp_l + 2);
-                nums[tmp_l + 2] = 0;
+                nums[r + 3] = nums[r + 2] + nums[r + 3];
 
                 ids.insert(tmp_l, ids[r]);
                 ids.insert(tmp_l, -1);
@@ -73,8 +72,8 @@ fn process_file(file_path: &str) -> io::Result<()> {
                 nums.insert(tmp_l, 0);
                 tmp_l += 1;
                 r += 1;
-                nums[tmp_l] = nums[r];
-                nums.insert(r, 0);
+                nums.swap(tmp_l, r);
+                nums.swap(r, r + 1);
                 tmp_l += 1;
                 nums.insert(tmp_l, remainder);
                 tmp_l -= 2;
@@ -83,12 +82,6 @@ fn process_file(file_path: &str) -> io::Result<()> {
             while r > 0 && nums[r] == 0 {
                 r -= 2;
             }
-            // print_storage(&ids);
-            // print_nums(&nums);
-            // dbg!(tmp_l, r, nums[tmp_l], nums[r]);
-            // let mut buffer = String::new();
-            // let stdin = io::stdin(); // We get `Stdin` here.
-            // stdin.read_line(&mut buffer)?;
             tmp_l += 2;
         }
         r -= 2;
@@ -97,7 +90,6 @@ fn process_file(file_path: &str) -> io::Result<()> {
         }
     }
 
-    ids = ids.into_iter().filter(|&x| x >= 0).collect();
     let mut storage: Vec<i16> = vec![-1; size];
 
     let mut id = 0;
@@ -105,11 +97,15 @@ fn process_file(file_path: &str) -> io::Result<()> {
     for i in 0..nums.len() {
         let d = nums[i];
         if i % 2 == 0 {
+            if ids[id] == -1 {
+                id += 2;
+                continue;
+            }
             for _ in 0..d {
                 storage[s_idx] = ids[id];
                 s_idx += 1;
             }
-            id += 1;
+            id += 2;
             if id >= ids.len() {
                 break;
             }
@@ -137,6 +133,7 @@ fn print_nums(nums: &Vec<usize>) {
     }
     println!("");
 }
+
 fn print_storage(storage: &Vec<i16>) {
     for s in storage {
         if *s == -1 {
