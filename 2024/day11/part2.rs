@@ -5,7 +5,7 @@ use std::io;
 use std::process::exit;
 
 fn main() {
-    let args = env::args().collect::<Vec<String>>();
+    let args: Vec<String> = env::args().collect();
     if args.len() <= 1 {
         eprintln!("Usage: {} <file_path>", args[0]);
         exit(1);
@@ -16,53 +16,53 @@ fn main() {
     }
 }
 
-fn recursive_stone_count(
-    initial_stones: &[usize],
-    remaining_iterations: usize,
-    memo: &mut HashMap<(Vec<usize>, usize), usize>,
-) -> usize {
-    if remaining_iterations == 0 {
-        return initial_stones.len();
+fn blink_recursive(num: usize, depth: usize, cache: &mut HashMap<(usize, usize), usize>) -> usize {
+    // Check cache first
+    if let Some(&result) = cache.get(&(num, depth)) {
+        return result;
     }
 
-    let key = (initial_stones.to_vec(), remaining_iterations);
-    if let Some(&cached_result) = memo.get(&key) {
-        return cached_result;
-    }
+    let result = if depth == 0 {
+        1
+    } else if num == 0 {
+        blink_recursive(1, depth - 1, cache)
+    } else {
+        let digits = num.to_string();
+        let len = digits.len();
 
-    let next_stones: Vec<usize> = initial_stones
-        .iter()
-        .flat_map(|&stone| match stone {
-            0 => vec![1],
-            x if x.to_string().len() % 2 == 0 => {
-                let len = x.to_string().len();
-                let divisor = 10_usize.pow(len as u32 / 2);
-                vec![x / divisor, x % divisor]
-            }
-            x => vec![x * 2024],
-        })
-        .collect();
+        if len % 2 == 0 {
+            let (first_half, second_half) = digits.split_at(len / 2);
+            let num1 = first_half.parse::<usize>().unwrap();
+            let num2 = second_half.parse::<usize>().unwrap();
+            blink_recursive(num1, depth - 1, cache) + blink_recursive(num2, depth - 1, cache)
+        } else {
+            blink_recursive(num * 2024, depth - 1, cache)
+        }
+    };
 
-    let result = recursive_stone_count(&next_stones, remaining_iterations - 1, memo);
-    memo.insert(key, result);
+    // Store in cache
+    cache.insert((num, depth), result);
     result
 }
 
 fn process_file(file_path: &str) -> io::Result<()> {
-    let file_content = fs::read_to_string(file_path)?;
-    let initial_stones: Vec<usize> = file_content
+    let content = fs::read_to_string(file_path)?;
+    let numbers: Vec<usize> = content
         .lines()
         .next()
         .expect("File is empty")
         .split_whitespace()
-        .map(|s| s.parse::<usize>().unwrap())
+        .map(|s| s.parse().unwrap())
         .collect();
 
-    let iterations = 40;
-    let mut memo = HashMap::new();
+    let depth = 75;
+    let mut cache = HashMap::new();
 
-    let result = recursive_stone_count(&initial_stones, iterations, &mut memo);
-    dbg!(result);
+    let total: usize = numbers
+        .iter()
+        .map(|&num| blink_recursive(num, depth, &mut cache))
+        .sum();
 
+    println!("Result: {}", total);
     Ok(())
 }
