@@ -1,3 +1,5 @@
+// See: https://github.com/michel-kraemer/adventofcode-rust/blob/main/2024/day21/src/main.rs
+// for optimized solution
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::collections::HashMap;
@@ -57,7 +59,7 @@ fn precompute_paths(
 
                 let mut rand_dirs = dirs.clone();
                 rand_dirs.shuffle(&mut rng);
-                for &(dr, dc, dir) in &dirs {
+                for &(dr, dc, dir) in &rand_dirs {
                     let next_pos = (current_pos.0 + dr, current_pos.1 + dc);
                     if key_positions.values().any(|&pos| pos == next_pos)
                         && !visited.contains_key(&next_pos)
